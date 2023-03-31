@@ -1,52 +1,61 @@
-const express= require('express');
-const app = express();
-const path = require('path')
-const cors=require('cors');
-const http=require('http')
-const server = http.createServer(app);
-const { Server } = require("socket.io");
-var os = require('os');
-var pty = require('node-pty');
+  const express= require('express');
+  const app = express();
+  app.use(express.json())
+  const cors=require('cors');
+  app.use(cors());
+  const { exec, spawn } = require("child_process");
+  const fs=require('fs');
+  const bodyParser = require('body-parser');
+  app.use(bodyParser.json());
 
-var shell = os.platform() === 'win32' ? 'powershell.exe' : 'bash';
-
-var ptyProcess = pty.spawn(shell, [], {
-  name: 'xterm-color',
-  cols: 80,
-  rows: 30,
-  cwd: "assets",
-  env: process.env
-});
-
-
-const io = require("socket.io")(server, {
-  cors: {
-    origin: "http://localhost:4200",
-    methods: ["GET", "POST"]
-  }
-});
-
-const fs=require('fs');
-
-let outputCode;
-socket.emit("code-output", outputCode);hgb
-io.on("connection", (socket) => {
-
-  console.log("34");
-  socket.on("hello from client", (code) => {
-    console.log("36");
-
-    ptyProcess.onData((output)=> {
-        console.log("40");
-        this.outputCode=output
-        
+  app.post('/compile',(req,res)=>{
+    const code=req.body.code;
   
-     
-      
+    const lang=req.body.lang;
+    console.log(lang);
+    const userInput=req.body.userInput;
+
+    if(lang=='java'){
+      fs.writeFile("assets/test.java",code,(err)=>{
+        if(err){
+            console.log(err);
+        }
+        else{
+            console.log("File written successfully\n");
+            console.log("The written has the following contents:");
+            console.log(fs.readFileSync("assets/test.java", "utf8"));
+        }
+    })
+
+    const javac = spawn('javac',['./assets/test.java']);
+    javac.stderr.on('data', (data) => {
+      console.error(`stderr: ${data}`);
     });
 
+    javac.on('close', (code) => {
+      if (code !== 0) {
+        console.error(`javac process exited with code ${code}`);
+        return;
+      }
+      const java = spawn('java', ['-cp','assets','test']);
+      java.stdin.write(`${userInput}\n`);
+      java.stdout.on('data', (data) => {
+        console.log(data.toString());
+      });
+
+      java.stderr.on('data', (data) => {
+        console.error(`stderr: ${data}`);
+      });
+
+      java.on('close', (code) => {
+        console.log(`java process exited with code ${code}`);
+      });
+    
+    });
+    }
   
-   
+    else if(lang=='cpp'){
+    fs.writeFile("assets/test.cpp",'',function(){console.log('done')});
     fs.writeFile("assets/test.cpp",code,(err)=>{
       if(err){
           console.log(err);
@@ -58,80 +67,34 @@ io.on("connection", (socket) => {
       }
   })
 
-  // const { exec, spawn } = require("child_process");
-  console.log("62");
-      ptyProcess.write("g++ test.cpp; ./a.exe\r ");
-        
-  
-   
-      // exec("g++ assets/test.cpp", (error, stdout, stderr) => {
-      //   if (error) {
-      //     console.log(`error: ${error.message}`);
-      //     return;
-      //   }
-      //   if (stderr) {
-      //     console.log(`stderr: ${stderr}`);
-      //     return;
-      //   }
-      
-      //   const child = spawn("./a"); //where a is the exe file generated on compiling the code.
-      // //   child.stdin.write("4 5");
-      // //   child.stdin.end();
-      //   child.stdout.on("data", (data) => {
-      //     outputCode=data;
-      //     console.log(`child stdout:\n${data}`);
-      //   });
-      // });
-      
+    
+      const childProcess = spawn('g++', ['assets/test.cpp', '-o', 'test.exe']);
+      childProcess.on('exit', (code) => {
+  if (code === 0) {
+
+    const codeExecution = spawn('test.exe');
+    process.stdin.on('data', (data) => {
+      console.log();
+      codeExecution.stdin.write(data);
+    });
+
+    codeExecution.stdout.on('data', (data) => {
+      console.log(data.toString());
+    });
+
+    codeExecution.stderr.on('data', (data) => {
+      console.error(data.toString());
+    });
+  } 
+
+  else {
+    console.log('Compilation failed!');
+  }
   });
-
-    socket.on("keypress",(input)=>{
-    console.log("77");
-    console.log(input+"83");
-    console.log("91");
-    ptyProcess.write(input);
-    // ptyProcess.write("./a.exe\r ");
-    // ptyProcess.onData((output)=> {
-    //   console.log(output+"d");
-    //   socket.emit("code-output", output);});
+  }
   })
-
-  // socket.on("toTerm",(data)=>{
-  //   ptyProcess.write(data)
-  // })
-
-
- 
-});
-
-
-
-// app.post('/compile',(req,res)=>{
-//     code=req.body.code;
-   
-// })
-    
-//     // app.post("/",(req,res)=>{
-      
-//     // })
-
-//     app.get("/",(req,res)=>{
-      
-//     })
-    
-
-    
-    
-
-
-
-// app.get('/compile',(req,res)=>{
-//     res.send(code)
-// })
-
-    
-
-server.listen(5000,()=>{
-    console.log('listening');
-}
-)
+  
+  app.listen(5000,()=>{
+      console.log('listening');
+  }
+  )
