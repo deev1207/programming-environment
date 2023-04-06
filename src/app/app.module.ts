@@ -5,13 +5,12 @@ import { BrowserModule } from '@angular/platform-browser';
 import { MonacoEditorModule } from 'ngx-monaco-editor';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { CompileComponent } from './compile/compile.component';
+
 
 
 @NgModule({
   declarations: [
     AppComponent,
-    CompileComponent,
   ],
   imports: [
     BrowserModule,

@@ -1,13 +1,21 @@
+<label for="lang">Select language</label>
+<select name="lang" id="lang" (change)="onChange($event)">
+    <option value="java">Java</option>
+    <option value="cpp">C++</option>
+    <option value="python">Python</option>
 
+</select>
+<br><br>
 <div style="height: 350px">
-    <ngx-monaco-editor style="height: 100%" [options]="editorOptions" [(ngModel)]="code" (ngModelChange)='change($event)'>
+    <ngx-monaco-editor style="height: 100%" [options]="editorOptions" [(ngModel)]="code"
+        (ngModelChange)='change($event)'>
     </ngx-monaco-editor>
 </div>
 <button (click)="onCompile()">Compile</button>
+<input id='userInput' [(ngModel)]='userInput'>User input
 
-<!-- <button (click)="onSubmit()">Submit</button> -->
-<!-- <button (click)="onSubmit()">Compile</button> -->
 
 <div>{{output}}</div>
 <div id='terminal' style="background: black;"></div>
 
+<router-outlet></router-outlet>
